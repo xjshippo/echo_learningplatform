@@ -1,0 +1,141 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.jxau.mapper.FavoritesMapper">
+
+    <resultMap id="EssayMap" type="com.jxau.pojo.EssayUserVO">
+        <id property="id" column="id"/>
+        <result property="title" column="title"/>
+        <result property="content" column="context"/>
+        <result property="userId" column="userId"/>
+        <result property="tags" column="type"/>
+        <result property="state" column="state"/>
+        <result property="likeNumber" column="likenumber"/>
+        <result property="visitNumber" column="visitnumber"/>
+        <result property="commentNumber" column="commentnumber"/>
+        <result property="create_time" column="creat_time"/>
+        <result property="coverImgUrl" column="coverImgUrl"/>
+        <!-- 如果管理一个对象使用 association 调用com.jxau.mapper.EssayMapper.getUserByUserId 的查询方法，将 column的值传递给selById-->
+        <association property="user" column="userId" select="com.jxau.mapper.UserMapper.getUsersEssay"/>
+        <!--        <association property="images" column="id" select="com.jxau.mapper.UserMapper.selectImages"/>-->
+    </resultMap>
+
+    <insert id="saveFavorite">
+        insert into favorites_table(
+            id,
+            userId,
+            name,
+            createTime
+        )
+        value (
+        #{id},
+        #{userId},
+        #{name},
+        #{createTime}
+        )
+
+    </insert>
+
+    <delete id="deleteFavoritesByFavoritesIdAndUserId" parameterType="com.jxau.pojo.FavoritesPO">
+        delete from favorites_table where id = #{id} and userId = #{userId}
+    </delete>
+
+    <insert id="insertInvitation">
+        insert into favorites_invitation_table(
+            favoritesId,
+            invitationId,
+            userId,
+            createTime
+        )
+        values (
+        #{favoritesId},
+        #{invitationId},
+        #{userId},
+        #{createTime}
+        )
+
+    </insert>
+
+    <delete id="deleteFavoritesWithInvitation">
+        delete from favorites_invitation_table where favoritesId = #{favoritesId} and userId = #{currentUserId}
+    </delete>
+
+<!--    <select id="selectFavoritesEssay" resultType="com.jxau.pojo.EssayPOVO">
+        SELECT
+
+        rc_learn.invitation_table.id,
+        rc_learn.invitation_table.context as content,
+        rc_personal.user_table.nick_name as userName,
+        rc_learn.invitation_table.coverImgUrl as contentImg,
+        rc_learn.invitation_table.title,
+        rc_learn.invitation_table.likenumber as likeNumber,
+        rc_learn.invitation_table.visitnumber as visitNumber,
+        rc_learn.invitation_table.commentnumber as commentNumber
+
+        FROM rc_learn.invitation_table
+        JOIN
+        rc_personal.favorites_invitation_table
+        ON
+        rc_personal.favorites_invitation_table.invitationId = rc_learn.invitation_table.id
+        JOIN
+        rc_personal.user_table
+        ON
+        rc_personal.favorites_invitation_table.userId = rc_personal.user_table.id
+        where
+        rc_personal.favorites_invitation_table.favoritesId = #{favoritesId}
+        and
+        rc_personal.favorites_invitation_table.userId = #{currentUserId}
+    </select>-->
+
+    <select id="selectFavoritesEssay" resultMap="EssayMap">
+        SELECT
+
+        rc_learn.invitation_table.id,
+        rc_learn.invitation_table.context,
+        rc_learn.invitation_table.coverImgUrl,
+        rc_learn.invitation_table.title,
+        rc_learn.invitation_table.type,
+        rc_learn.invitation_table.likenumber,
+        rc_learn.invitation_table.visitnumber,
+        rc_learn.invitation_table.commentnumber,
+        rc_personal.favorites_invitation_table.userId,
+        rc_learn.invitation_table.state,
+        rc_learn.invitation_table.creat_time
+
+        FROM rc_learn.invitation_table
+        JOIN
+        rc_personal.favorites_invitation_table
+        ON
+        rc_personal.favorites_invitation_table.invitationId = rc_learn.invitation_table.id
+        JOIN
+        rc_personal.user_table
+        ON
+        rc_personal.favorites_invitation_table.userId = rc_personal.user_table.id
+        where
+        rc_personal.favorites_invitation_table.favoritesId = #{favoritesId}
+        and
+        rc_personal.favorites_invitation_table.userId = #{currentUserId}
+
+    </select>
+
+    <select id="seleteUserAllFavorites" resultType="com.jxau.pojo.FavoritesPOJO">
+        select
+        rc_personal.favorites_table.id,
+        rc_personal.favorites_table.`name`,
+        rc_personal.favorites_table.createTime,
+        (select count(*)
+        from rc_personal.favorites_invitation_table
+        where
+        rc_personal.favorites_table.id = rc_personal.favorites_invitation_table.favoritesId
+        ) as num
+        from
+        rc_personal.favorites_table
+
+        where
+        rc_personal.favorites_table.userId = #{currentUserId}
+
+    </select>
+
+</mapper>

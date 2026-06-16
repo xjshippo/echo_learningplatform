@@ -1,0 +1,181 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Config 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.jxau.mapper.DiscussMapper">
+    <resultMap id="discussMap" type="com.jxau.pojo.DiscussPO">
+        <id column="id" property="id"/>
+        <result column="discuss_name" property="discuss_name"/>
+        <result column="tags" property="tags"/>
+        <result column="create_time" property="create_time"/>
+        <result column="image_url" property="image_url"/>
+        <result property="number" column="number"/>
+    </resultMap>
+
+    <!--user映射结果集-->
+    <resultMap id="userMap" type="com.jxau.pojo.UserPO">
+        <id column="id" property="id" jdbcType="VARCHAR"/>
+        <result column="login_act" property="loginAct" jdbcType="VARCHAR"/>
+        <result column="pass_word" property="passWord" jdbcType="VARCHAR"/>
+        <result column="nick_name" property="nickName" jdbcType="VARCHAR"/>
+        <result column="nickName" property="nickName" jdbcType="VARCHAR"/>
+        <result column="image_url" property="imageUrl" jdbcType="VARCHAR"/>
+        <result column="phone" property="phone" jdbcType="VARCHAR"/>
+        <result column="open_id" property="openId" jdbcType="VARCHAR"/>
+        <result column="state" property="state" jdbcType="INTEGER"/>
+        <result column="last_time" property="lastTime" jdbcType="DATE"/>
+    </resultMap>
+
+    <resultMap id="typeMap" type="com.jxau.pojo.TypePO">
+        <id column="id" property="id"/>
+        <result column="type" property="type"/>
+    </resultMap>
+    <resultMap id="discussCommentMap" type="com.jxau.pojo.DiscussCommentPO">
+        <id property="id" column="id"/>
+        <result property="title" column="title"/>
+        <result property="content" column="content"/>
+        <result property="discussId" column="discussid"/>
+        <result property="userId" column="userid"/>
+        <result property="parentId" column="parentid"/>
+        <result property="likeNumber" column="likenumber"/>
+        <result property="visitNumber" column="visitnumber"/>
+        <result property="create_time" column="create_time"/>
+        <result property="state" column="state"/>
+        <result property="collectNum" column="collectNum"/>
+        <association property="imagePos" column="id" select="com.jxau.mapper.DiscussMapper.selectAllImage"/>
+        <association property="user" column="userid" select="com.jxau.mapper.DiscussMapper.getUserByUserId"/>
+    </resultMap>
+
+    <resultMap id="discussVoMap" type="com.jxau.pojo.DiscussVO">
+        <id column="id" property="id"/>
+        <result column="cid" property="cId"/>
+        <result column="did" property="dId"/>
+        <association property="discussPO" column="did" select="com.jxau.mapper.DiscussMapper.getOneDiscussById"/>
+    </resultMap>
+
+    <resultMap id="likeDiscussCommentPOMap" type="com.jxau.pojo.LikeDiscussCommentPO">
+        <id property="id" column="id"/>
+        <result column="dcid" property="dcId"/>
+        <result column="uid" property="uId"/>
+    </resultMap>
+    <resultMap id="imageMap" type="com.jxau.pojo.ImagePo">
+        <id column="id" property="id"/>
+        <result property="iid" column="did"/>
+        <result column="url" property="url"/>
+    </resultMap>
+
+    <insert id="addImage" parameterType="com.jxau.pojo.ImagePo">
+        insert into discuss_image_table values (#{id},#{iid},#{url})
+    </insert>
+
+    <select id="selectAllImage" resultMap="imageMap">
+        select * from discuss_image_table where did = #{id}
+    </select>
+
+    <select id="getUserByUserId" resultMap="userMap">
+        select * from `rc_personal`.user_table where id = #{id}
+    </select>
+
+    <select id="getOneDiscussById" resultMap="discussMap">
+        select * from discuss_community_table where id = #{id}
+    </select>
+
+    <insert id="insertOneDiscuss" parameterType="com.jxau.pojo.DiscussPO">
+        insert into discuss_community_table values (#{id},#{discuss_name},#{tags},#{create_time},#{image_url},#{number})
+    </insert>
+
+    <insert id="insertOneLikeDiscuss" parameterType="com.jxau.pojo.DiscussVO">
+        insert into discuss_community_user_table values (#{id},#{uId},#{dId})
+    </insert>
+
+    <update id="updateLikeNumber" >
+        update discuss_community_table set number = #{number} where id = #{discussId}
+    </update>
+
+    <select id="selectUserLikeDiscuss" resultMap="discussVoMap">
+        select * from discuss_community_user_table where uid = #{userId}
+    </select>
+
+    <select id="selectAllDiscuss" resultMap="discussMap">
+        select * from discuss_community_table
+        <where>
+            <if test="discussName !=null and discussName!=''">
+                and discuss_name like concat('%',#{discussName,jdbcType=VARCHAR},'%')
+            </if>
+            <if test="type!=null and tpye!=''">
+                and tags like concat('%',#{type,jdbcType=VARCHAR},'%')
+            </if>
+        </where>
+    </select>
+
+    <delete id="deleteOneLikeDiscuss">
+        delete from discuss_community_user_table where uid = #{userId} and did = #{discussId}
+    </delete>
+
+    <insert id="insertOneDiscussComment" parameterType="com.jxau.pojo.DiscussCommentPO">
+        insert into discuss_comment_table values (#{id},#{content},#{discussId}, #{userId}, #{parentId},#{likeNumber},#{visitNumber},#{create_time},#{state},#{collectNum},#{title})
+    </insert>
+
+    <select id="selectLikeEssays" resultMap="likeDiscussCommentPOMap">
+        select * from discuss_like_comment_table where
+        <where>
+            <if test="commentId != null and commentId != '' ">
+                and dcid = #{commentId}
+            </if>
+            <if test="userId != null and userId != '' ">
+                and uid = #{userId}
+            </if>
+        </where>
+    </select>
+
+    <insert id="insertLikeEssays" parameterType="com.jxau.pojo.LikeDiscussCommentPO">
+        insert into  discuss_like_comment_table values (#{id},#{dcId},#{uId})
+    </insert>
+
+    <delete id="deleteLikeEssays">
+        delete from discuss_like_comment_table where dcid = #{commentId} and uid = #{userId}
+    </delete>
+
+    <update id="updateDiscussCommentNumber">
+        update discuss_comment_table
+        <set>
+            <if test="likeNumber != null and likeNumber!=''" >
+                likenumber = #{likeNumber},
+            </if>
+            <if test="visitNumber != null and visitNumber!=''" >
+                visitnumber = #{visitNumber},
+            </if>
+            <if test="commentNumber != null and commentNumber!=''" >
+                commentnumber = #{commentNumber},
+            </if>
+        </set>
+        where id = #{commentId}
+    </update>
+
+    <select id="selectAllDiscussComment" resultMap="discussCommentMap">
+        select * from discuss_comment_table
+        <where>
+            <if test="parentId!=null and parentId!=''">
+                and parentId = #{parentId}
+            </if>
+            <if test="content!=null and content!=''">
+                and content like concat('%',#{content,jdbcType=VARCHAR},'%')
+            </if>
+            <if test="userId!=null and userId!=''">
+                and userid = #{userId} and state  = 0
+            </if>
+            <if test="discussId != null and discussId != ''">
+                and discussid = #{discussId}
+            </if>
+            and state = 1
+        </where>
+    </select>
+
+    <select id="selectAllType" resultMap="typeMap">
+        select * from type_table
+    </select>
+
+    <select id="selectOneDiscussComment" resultMap="discussCommentMap">
+        select * from discuss_comment_table where id = #{commentId}
+    </select>
+</mapper>

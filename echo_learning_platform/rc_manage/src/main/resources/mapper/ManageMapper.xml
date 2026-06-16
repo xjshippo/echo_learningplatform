@@ -1,0 +1,130 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.jxau.mapper.ManageMapper">
+
+    <!--essay映射结果集-->
+    <resultMap id="EssayMap" type="com.jxau.pojo.EssayPO">
+        <!--column对应数据库，property对应实体类-->
+        <id property="id" column="id"/>
+        <result property="title" column="title"/>
+        <result property="content" column="context"/>
+        <result property="userId" column="userId"/>
+        <result property="tags" column="type"/>
+        <result property="state" column="state"/>
+        <result property="likeNumber" column="likenumber"/>
+        <result property="visitNumber" column="visitnumber"/>
+        <result property="commentNumber" column="commentnumber"/>
+        <result property="create_time" column="creat_time"/>
+        <result property="avatar" column="coverImgUrl"/>
+        <result property="userName" column="nick_name"/>
+    </resultMap>
+
+    <select id="selectAllEssays" resultMap="EssayMap">
+        select
+        rc_learn.invitation_table.id,
+        rc_learn.invitation_table.creat_time,
+        rc_learn.invitation_table.state,
+        rc_learn.invitation_table.title,
+        rc_learn.invitation_table.type,
+        rc_learn.invitation_table.likenumber,
+        rc_learn.invitation_table.commentnumber,
+        rc_learn.invitation_table.visitnumber,
+        rc_learn.invitation_table.coverImgUrl,
+        rc_learn.invitation_table.context,
+        rc_personal.user_table.nick_name
+
+        from
+        rc_learn.invitation_table
+        left JOIN
+        rc_personal.user_table
+        ON
+        rc_learn.invitation_table.userId = rc_personal.user_table.id
+
+        <if test="state != null and state!=''">
+        where
+        rc_learn.invitation_table.state = 0
+        </if>
+
+        order by creat_time desc
+    </select>
+
+    <select id="selectEssayImagesById" resultType="String">
+        select
+        rc_learn.incitaion_imag_table.url
+        from
+        rc_learn.incitaion_imag_table
+        JOIN
+        rc_learn.invitation_table
+        ON
+        rc_learn.invitation_table.id = rc_learn.incitaion_imag_table.iid
+        WHERE
+        rc_learn.invitation_table.id = #{id}
+    </select>
+
+    <update id="updateEssaysState">
+        UPDATE
+        rc_learn.invitation_table
+        set
+        rc_learn.invitation_table.state = 1
+        WHERE
+        rc_learn.invitation_table.id = #{id}
+    </update>
+
+    <delete id="deleteEssays">
+        DELETE
+        FROM
+        rc_learn.invitation_table
+        WHERE
+        rc_learn.invitation_table.id = #{id}
+    </delete>
+
+    <select id="selectAllUser" resultType="com.jxau.pojo.UserInfoVO">
+        SELECT
+        rc_personal.basic_info_table.userId,
+        rc_personal.basic_info_table.QQ,
+        rc_personal.basic_info_table.address,
+        rc_personal.basic_info_table.email,
+        rc_personal.basic_info_table.id,
+        rc_personal.basic_info_table.medals,
+        rc_personal.basic_info_table.messageId,
+        rc_personal.basic_info_table.phone,
+        rc_personal.basic_info_table.professional,
+        rc_personal.basic_info_table.sex,
+        rc_personal.basic_info_table.skills_tree_id,
+        rc_personal.user_table.image_url as imgUrl
+
+        FROM
+        rc_personal.basic_info_table
+        JOIN
+        rc_personal.user_table
+        ON
+        rc_personal.user_table.id =  rc_personal.basic_info_table.userId
+
+        <if test="state != null and state!=''">
+            where
+            rc_personal.user_table.state = 0
+        </if>
+
+    </select>
+
+    <update id="updateUserState">
+        UPDATE
+        rc_personal.user_table
+        set
+        rc_personal.user_table.state = 1
+        WHERE
+        rc_personal.user_table.id = #{userId}
+    </update>
+
+    <delete id="deleteUser">
+        DELETE
+        FROM
+        rc_personal.user_table
+        WHERE
+        rc_personal.user_table.id = #{id}
+    </delete>
+
+</mapper>

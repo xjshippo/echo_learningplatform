@@ -1,0 +1,369 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.jxau.mapper.QuestionMapper">
+
+    <select id="seleteProblemSets" resultType="com.jxau.pojo.ProblemSetsVO">
+        select
+        id,
+        skillid as skillId,
+        passrate as passRate,
+        number,
+        passnumbers as passNumbers,
+        createtime as create_time,
+        `level`,
+        `name` as title
+        from
+        rc_question.problemsets_table
+
+    </select>
+
+    <select id="getQuestionChoiceBySetId" resultType="com.jxau.pojo.MultipleChoicePO">
+        SELECT
+        rc_question.multiple_choice_table.id as uuid,
+        rc_question.multiple_choice_table.describe as content,
+        rc_question.multiple_choice_table.op_one,
+        rc_question.multiple_choice_table.op_two,
+        rc_question.multiple_choice_table.op_three,
+        rc_question.multiple_choice_table.op_four,
+        rc_question.multiple_choice_table.op_answer,
+        rc_question.multiple_choice_table.analysis,
+        rc_question.multiple_choice_table.tags,
+        rc_question.multiple_choice_table.question_type
+        FROM
+        rc_question.multiple_choice_table
+        JOIN
+        rc_question.problemsets_question_table
+        ON
+        rc_question.problemsets_question_table.qid = rc_question.multiple_choice_table.id
+        WHERE
+        rc_question.problemsets_question_table.pid = #{questionSetId}
+        order by
+        rc_question.multiple_choice_table.question_type
+    </select>
+
+    <select id="seleteProblemSetTagById" resultType="com.jxau.pojo.TagVO">
+        SELECT
+        rc_personal.skill_table.id as tagId,
+        rc_personal.skill_table.content as tag
+        FROM
+        rc_personal.skill_table
+        left JOIN
+        rc_question.skill_problemset_table
+        ON
+        rc_question.skill_problemset_table.skiiId = rc_personal.skill_table.id
+        left JOIN
+        rc_question.problemsets_table
+        ON
+        rc_question.skill_problemset_table.problemsetId = rc_question.problemsets_table.id
+        WHERE
+        rc_question.problemsets_table.id = #{id}
+    </select>
+
+    <select id="seleteAnswerByQuestionSetId" resultType="String">
+        SELECT
+        rc_question.multiple_choice_table.op_answer
+        FROM
+        rc_question.multiple_choice_table
+        JOIN
+        rc_question.problemsets_question_table
+        ON
+        rc_question.problemsets_question_table.qid = rc_question.multiple_choice_table.id
+        WHERE
+        rc_question.problemsets_question_table.pid = #{questionSetId}
+        ORDER BY
+        rc_question.multiple_choice_table.question_type
+    </select>
+
+    <select id="seleteQuestionSetUserByQuestionIdAndUserId" resultType="com.jxau.pojo.ProblemsetsUserPO">
+        SELECT
+        *
+        FROM
+        rc_question.problemsets_user_table
+        WHERE
+        rc_question.problemsets_user_table.pid = #{questionSetId}
+        and
+        rc_question.problemsets_user_table.userid = #{currentUserId}
+    </select>
+
+    <insert id="insertQuestionWithUser">
+        insert into rc_question.problemsets_user_table(
+            pid,
+            id,
+            userid,
+            createtime,
+            passRate
+        )
+        values(
+        #{ProblemSetId},
+        #{id},
+        #{userId},
+        #{createTime},
+        #{passRate}
+
+        )
+    </insert>
+
+    <update id="updateQuestionWithUser">
+        UPDATE
+        rc_question.problemsets_user_table
+        SET
+        createtime = #{createTime} , passRate = #{passRate}
+        WHERE
+        rc_question.problemsets_user_table.pid = #{ProblemSetId}
+        and
+        rc_question.problemsets_user_table.userid = #{userId}
+    </update>
+
+    <select id="getAnalysisBySetId">
+        SELECT
+        rc_question.multiple_choice_table.analysis
+        FROM
+        rc_question.problemsets_question_table
+        JOIN
+        rc_question.multiple_choice_table
+        ON
+        rc_question.problemsets_question_table.qid = rc_question.multiple_choice_table.id
+        WHERE
+        rc_question.problemsets_question_table.pid = #{questionSetId}
+    </select>
+
+    <select id="getQuestionChoiceIdBySetId" resultType="String">
+        SELECT
+        rc_question.multiple_choice_table.id
+        FROM
+        rc_question.multiple_choice_table
+        JOIN
+        rc_question.problemsets_question_table
+        ON
+        rc_question.problemsets_question_table.qid = rc_question.multiple_choice_table.id
+        WHERE
+        rc_question.problemsets_question_table.pid = #{questionSetId}
+        order by
+        rc_question.multiple_choice_table.question_type
+    </select>
+    <insert id="insertQuestion" parameterType="com.jxau.pojo.MultipleChoicePO">
+        insert into multiple_choice_table values (#{id},#{op_one},#{op_two},#{op_three},#{op_four},#{op_answer},#{source},#{analysis},#{tags},0,0,0,#{question_type})
+    </insert>
+
+    <insert id="insertProblemSets" parameterType="com.jxau.pojo.ProblemSetsVO">
+        insert into problemsets_table values (#{id},#{skillid},#{passRate},#{number},#{passNumbers},#{create_time},#{level},#{title})
+    </insert>
+
+    <insert id="insertQuestionAndProblemSets">
+        insert into problemsets_question_table values (#{id},#{pid},#{qid},#{type})
+    </insert>
+
+    <select id="getQuestion" resultType="com.jxau.pojo.MultipleChoicePO">
+        SELECT
+            id,
+            describe as content,
+            op_one,
+            op_two,
+            op_three,
+            op_four,
+            op_answer,
+            analysis,
+            tags,
+            question_type
+        FROM
+            rc_question.multiple_choice_table
+        <where>
+        id in
+            <foreach collection="list" index="index" item="item" open="(" separator="," close=")">
+                #{item}
+            </foreach>
+        </where>
+    </select>
+
+
+    <insert id="insertUserNoteBook">
+
+        insert
+        into
+        rc_question.mistake_table(
+        id,
+        questionid,
+        create_time,
+        error_choice,
+        type,
+        analysis,
+        right_choice
+
+        )
+        value (
+        #{id},
+        #{questionId},
+        #{create_time},
+        #{errorChoice},
+        #{type},
+        #{analysis},
+        #{rightChoice}
+        )
+
+    </insert>
+
+    <insert id="insertUserMistake">
+        insert
+        into
+        rc_question.mistake_user_table(
+
+        id,
+        userId,
+        mistakeId
+
+        )
+        values(
+
+        #{id},
+        #{userId},
+        #{mistakeId}
+
+        )
+    </insert>
+
+    <select id="seleteUserMistakesByUserId" resultType="com.jxau.pojo.MistakePO">
+
+        SELECT
+        rc_question.mistake_table.analysis,
+        rc_question.mistake_table.create_time,
+        rc_question.mistake_table.error_choice,
+        rc_question.mistake_table.id,
+        rc_question.mistake_table.questionid,
+        rc_question.mistake_table.right_choice,
+        rc_question.mistake_table.type
+        FROM
+        rc_question.mistake_table
+        JOIN
+        rc_question.mistake_user_table
+        ON
+        rc_question.mistake_table.id = rc_question.mistake_user_table.mistakeId
+        WHERE
+        rc_question.mistake_user_table.userId = #{currentUserId}
+
+    </select>
+
+    <select id="selectWrongQuestionByQuestionId" resultType="int">
+        SELECT
+        count(*)
+        FROM
+        rc_question.mistake_user_table
+        WHERE
+        rc_question.mistake_user_table.mistakeId = #{id} and rc_question.mistake_user_table.userId = #{userId}
+    </select>
+
+    <select id="seleteProblemSetsBySetId" resultType="com.jxau.pojo.ProblemSetsVO">
+        select
+        id,
+        skillid as skillId,
+        passrate as passRate,
+        number,
+        passnumbers as passNumbers,
+        createtime as create_time,
+        `level`,
+        `name` as title
+        from
+        rc_question.problemsets_table
+        where
+        id = #{questionSetId}
+    </select>
+
+
+    <select id="seleteProblemSetsByLevel" resultType="com.jxau.pojo.ProblemSetsVO">
+        select
+        id,
+        skillid as skillId,
+        passrate as passRate,
+        number,
+        passnumbers as passNumbers,
+        createtime as create_time,
+        `level`,
+        `name` as title
+        from
+        rc_question.problemsets_table
+        <if test="level != null and level != ''">
+            WHERE
+            rc_question.problemsets_table.`level` = #{level}
+        </if>
+
+
+    </select>
+
+    <delete id="deleteUserMistake">
+        DELETE FROM rc_question.mistake_table WHERE questionid = #{questionId}
+    </delete>
+
+    <delete id="deleteUserNoteBook">
+         DELETE
+         FROM
+         rc_question.mistake_user_table
+         WHERE
+         userId = #{currentUserId}
+         and
+         mistakeid = #{questionId}
+    </delete>
+
+    <select id="getMistakeQuestionByUserId" resultType="com.jxau.pojo.MultipleChoiceVO">
+        SELECT
+        rc_question.multiple_choice_table.id as uuid,
+        rc_question.multiple_choice_table.describe as content,
+        rc_question.multiple_choice_table.op_one,
+        rc_question.multiple_choice_table.op_two,
+        rc_question.multiple_choice_table.op_three,
+        rc_question.multiple_choice_table.op_four,
+        rc_question.multiple_choice_table.op_answer,
+        rc_question.multiple_choice_table.analysis,
+        rc_question.multiple_choice_table.tags,
+        rc_question.multiple_choice_table.question_type,
+        rc_question.mistake_table.error_choice
+
+        FROM
+        rc_question.multiple_choice_table
+        JOIN
+        rc_question.mistake_table
+        ON
+        rc_question.multiple_choice_table.id = rc_question.mistake_table.questionid
+        JOIN
+        rc_question.mistake_user_table
+        ON
+        rc_question.mistake_user_table.mistakeId = rc_question.mistake_table.id
+        WHERE
+        rc_question.mistake_user_table.userId = #{currentUserId}
+        order by
+        rc_question.multiple_choice_table.question_type
+    </select>
+
+    <select id="getMistakeQuestionDetail" resultType="com.jxau.pojo.MultipleChoiceVO">
+        SELECT
+        rc_question.multiple_choice_table.id as uuid,
+        rc_question.multiple_choice_table.describe as content,
+        rc_question.multiple_choice_table.op_one,
+        rc_question.multiple_choice_table.op_two,
+        rc_question.multiple_choice_table.op_three,
+        rc_question.multiple_choice_table.op_four,
+        rc_question.multiple_choice_table.op_answer,
+        rc_question.multiple_choice_table.analysis,
+        rc_question.multiple_choice_table.tags,
+        rc_question.multiple_choice_table.question_type,
+		rc_question.mistake_table.error_choice
+
+        FROM
+        rc_question.multiple_choice_table
+        JOIN
+        rc_question.mistake_table
+        ON
+        rc_question.multiple_choice_table.id = rc_question.mistake_table.questionid
+        JOIN
+        rc_question.mistake_user_table
+        ON
+        rc_question.mistake_user_table.mistakeId = rc_question.mistake_table.id
+        WHERE
+        rc_question.mistake_user_table.userId = #{currentUserId}
+        and
+        rc_question.mistake_table.questionid = #{questionId}
+        order by
+        rc_question.multiple_choice_table.question_type
+    </select>
+</mapper>

@@ -1,0 +1,190 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Config 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.jxau.mapper.EssayMapper">
+    <!--essay映射结果集-->
+    <resultMap id="EssayMap" type="com.jxau.pojo.Essay">
+        <id property="id" column="id"/>
+        <result property="title" column="title"/>
+        <result property="content" column="context"/>
+        <result property="userId" column="userId"/>
+        <result property="tags" column="type"/>
+        <result property="state" column="state"/>
+        <result property="likeNumber" column="likenumber"/>
+        <result property="visitNumber" column="visitnumber"/>
+        <result property="commentNumber" column="commentnumber"/>
+        <result property="create_time" column="creat_time"/>
+        <result property="coverImgUrl" column="coverImgUrl"/>
+        <!-- 如果管理一个对象使用 association 调用com.jxau.mapper.EssayMapper.getUserByUserId 的查询方法，将 column的值传递给selById-->
+        <association property="user" column="userId" select="com.jxau.mapper.EssayMapper.getUserByUserId"/>
+        <association property="images" column="id" select="com.jxau.mapper.EssayMapper.selectImages"/>
+    </resultMap>
+    <!--user映射结果集-->
+    <resultMap id="userMap" type="com.jxau.pojo.UserPO">
+        <id column="id" property="id" jdbcType="VARCHAR"/>
+        <result column="login_act" property="loginAct" jdbcType="VARCHAR"/>
+        <result column="pass_word" property="passWord" jdbcType="VARCHAR"/>
+        <result column="nick_name" property="nickName" jdbcType="VARCHAR"/>
+        <result column="nickName" property="nickName" jdbcType="VARCHAR"/>
+        <result column="image_url" property="imageUrl" jdbcType="VARCHAR"/>
+        <result column="phone" property="phone" jdbcType="VARCHAR"/>
+        <result column="open_id" property="openId" jdbcType="VARCHAR"/>
+        <result column="state" property="state" jdbcType="INTEGER"/>
+        <result column="last_time" property="lastTime" jdbcType="DATE"/>
+    </resultMap>
+    <!--图片-->
+    <resultMap id="imageMap" type="com.jxau.pojo.ImagePo">
+        <id column="id" property="id"/>
+        <result property="iid" column="iid"/>
+        <result property="url" column="url"/>
+    </resultMap>
+
+    <resultMap id="likeEssayMap" type="com.jxau.pojo.LikeEssayVO">
+        <id column="id" property="id"/>
+        <result column="iid" property="iId"/>
+        <result column="uid" property="uId"/>
+    </resultMap>
+
+    <insert id="insertOneEssay" parameterType="com.jxau.pojo.Essay" >
+        insert into invitation_table (id, title, context, userId, type, state, likenumber, visitnumber, commentnumber, creat_time, coverImgUrl)
+        values(#{id},#{title}, #{content}, #{userId}, #{tags}, #{state}, #{likeNumber}, #{visitNumber}, #{commentNumber}, #{create_time}, #{coverImgUrl})
+    </insert>
+
+    <insert id="addImage" parameterType="com.jxau.pojo.ImagePo">
+        insert into incitaion_imag_table values (#{id},#{iid},#{url},now())
+    </insert>
+    
+    <update id="deleteEssay">
+        update invitation_table set state = 2
+        <where>
+            id in
+           <foreach item="item" collection="list" separator="," open="(" close=")" index="">
+             #{item}
+           </foreach>
+        </where>
+    </update>
+    
+    <select id="selectAllEssaysTest" resultMap="EssayMap">
+        select * from invitation_table order by creat_time desc
+    </select>
+
+    <select id="selectFileEssays" resultType="com.jxau.pojo.EssayFileVO">
+        select title , id from  invitation_table where state = 1 order by visitnumber desc
+    </select>
+    <select id="selectAllEssays" resultMap="EssayMap">
+        select
+        *
+        from invitation_table
+        <where>
+            <if test="essayId!=null and essayId!=''">
+                or id = #{invitationId}
+            </if>
+            <if test="tags!=null and tags!=''">
+                or type like concat('%',#{tags,jdbcType=VARCHAR},'%')
+            </if>
+            <if test="content!=null and content!=''">
+                or context like concat('%',#{content,jdbcType=VARCHAR},'%')
+            </if>
+            <if test="title!=null and title!=''">
+                or title like concat('%',#{title,jdbcType=VARCHAR},'%')
+            </if>
+            and state = 1
+        </where>
+        order by creat_time desc
+    </select>
+
+    <select id="selectEssays" resultMap="EssayMap">
+        select * from invitation_table
+        <where>
+            id in
+            <foreach item="item" collection="idList" separator="," open="(" close=")" index="">
+                #{item}
+            </foreach>
+        </where>
+    </select>
+
+    <select id="getUserByUserId" resultMap="userMap">
+        select * from `rc_personal`.user_table where id = #{id}
+    </select>
+
+    <select id="selectImages" parameterType="java.lang.String" resultMap="imageMap">
+        select * from incitaion_imag_table where iid = #{iid}
+    </select>
+
+    <update id="updateEssay" >
+        update invitation_table
+        <set>
+            <if test="title != null and title!=''" >
+                title = #{title},
+            </if>
+            <if test="content != null and content!=''" >
+                context = #{content},
+            </if>
+            <if test="tags != null and tags!=''" >
+                type = #{tags},
+            </if>
+            <if test="coverImgUrl != null and coverImgUrl != ''">
+                coverImgUrl = #{coverImgUrl}
+            </if>
+
+        </set>
+        where id = #{invitationId}
+    </update>
+
+    <update id="updateEssayNumber">
+        update invitation_table
+        <set>
+            <if test="likeNumber != null and likeNumber!=''" >
+                likenumber = #{likeNumber},
+            </if>
+            <if test="visitNumber != null and visitNumber!=''" >
+                visitnumber = #{visitNumber},
+            </if>
+            <if test="commentNumber != null and commentNumber!=''" >
+                commentnumber = #{commentNumber},
+            </if>
+        </set>
+        where id = #{invitationId}
+    </update>
+
+    <select id="selectOneEssays" resultMap="EssayMap">
+        select * from invitation_table where id = #{invitationId}
+    </select>
+
+    <select id="selectLikeEssays" resultMap="likeEssayMap">
+        select * from like_user_invitation_table
+        <where>
+            <if test="invitationId!=null and invitationId!=''">
+                and iid = #{invitationId}
+            </if>
+            <if test="userId!=null and userId!=''">
+                and uid = #{userId}
+            </if>
+        </where>
+    </select>
+
+    <delete id="deleteLikeEssays">
+        delete from like_user_invitation_table where uid = #{userId} and iid = #{invitationId}
+    </delete>
+
+    <insert id="insertLikeEssays" parameterType="com.jxau.pojo.LikeEssayVO">
+        insert into like_user_invitation_table values (#{id},#{iId},#{uId})
+    </insert>
+
+    <insert id="insertUserViewHistory">
+        insert into rc_personal.history_view_table(
+        id,
+        viewId,
+        createTime,
+        userId
+        )
+        values (
+        #{id},
+        #{viewId},
+        #{createTime},
+        #{userId}
+        )
+
+    </insert>
+</mapper>

@@ -1,0 +1,144 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Config 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.jxau.mapper.ResourceMapper">
+    <resultMap id="resourcePoMap" type="com.jxau.pojo.ResourcePO">
+        <id column="id" property="id"/>
+        <result column="content" property="content"/>
+        <result column="uid" property="uid"/>
+        <result column="url" property="url"/>
+        <result column="imageurl" property="imageUrl"/>
+        <result column="create_time" property="create_time"/>
+        <result column="type" property="type"/>
+        <result column="tags" property="tags"/>
+        <result column="visitednumber" property="visitedNumber"/>
+        <result column="likenumber" property="likeNumber"/>
+        <result column="commentnumber" property="commentNumber"/>
+        <result column="state" property="state"/>
+        <result column="size" property="size"/>
+        <association property="user" column="uid" select="com.jxau.mapper.EssayMapper.getUserByUserId"/>
+    </resultMap>
+
+    <resultMap id="videoMap" type="com.jxau.pojo.VideoPO">
+        <id property="id" column="id"/>
+        <result column="content" property="content"/>
+        <result property="url" column="url"/>
+        <result column="userId" property="userId"/>
+        <result column="state" property="state"/>
+        <result column="create_time" property="create_time"/>
+        <result column="category" property="category"/>
+        <result property="imageUrl" column="imageUrl"/>
+        <association property="user" column="userId" select="com.jxau.mapper.EssayMapper.getUserByUserId"/>
+        <association property="lookUserPos" column="id" select="com.jxau.mapper.ResourceMapper.selectLookAllUser"/>
+    </resultMap>
+
+    <resultMap id="lookUserMap" type="com.jxau.pojo.LookUserPo">
+        <id property="id" column="id"/>
+        <result column="uid" property="uid"/>
+        <result column="vid" property="vid"/>
+        <association property="user" column="uid" select="com.jxau.mapper.EssayMapper.getUserByUserId"/>
+    </resultMap>
+
+    <resultMap id="likeResourceMap" type="com.jxau.pojo.LikeResourceVO">
+        <id property="id" column="id"/>
+        <result property="rId" column="rid"/>
+        <result property="uId" column="uid"/>
+    </resultMap>
+    <insert id="insertOneResource" parameterType="com.jxau.pojo.ResourcePO">
+        insert into  resource_table values (#{id},#{content},#{uid},#{type},#{tags},#{url},#{imageurl},#{create_time},#{visitNumber},#{likeNumber},#{state},#{commentNumber},#{size})
+    </insert>
+
+    <select id="selectAllVideo" resultMap="videoMap">
+        select
+        *
+        from video_table
+        <where>
+            <if test="videoId!=null and videoId!=''">
+                and id = #{videoId}
+            </if>
+            <if test="content!=null and content!=''">
+                and content like concat('%',#{content,jdbcType=VARCHAR},'%')
+            </if>
+            <if test="userId!=null and userId!=''">
+                and userId = #{userId} and state  = 0
+            </if>
+            and state = 1
+        </where>
+        order by create_time desc
+    </select>
+
+
+    <select id="selectAllResource" resultMap="resourcePoMap">
+        select
+        *
+        from resource_table
+        <where>
+            <if test="resourceId!=null and resourceId!=''">
+                and id = #{resourceId}
+            </if>
+            <if test="type!=null and type!=''">
+                and type = #{type}
+            </if>
+            <if test="tags != null and type != ''">
+                and tags = #{tags}
+            </if>
+            <if test="content!=null and content!=''">
+                and content like concat('%',#{content,jdbcType=VARCHAR},'%')
+            </if>
+            <if test="userId!=null and userId!=''">
+                and userId = #{userId} and state  = 0
+            </if>
+            and state = 1
+        </where>
+        order by create_time desc
+    </select>
+
+    <update id="deleteResource">
+        update resource_table set state = 2
+        <where>
+            id in
+            <foreach item="item" collection="list" separator="," open="(" close=")" index="">
+                #{item}
+            </foreach>
+        </where>
+    </update>
+
+
+
+    <update id="updateResourceNumber">
+        update resource_table
+        <set>
+            <if test="likeNumber != null and likeNumber!=''" >
+                likenumber = #{likeNumber},
+            </if>
+            <if test="visitNumber != null and visitNumber!=''" >
+                visitnumber = #{visitNumber},
+            </if>
+            <if test="commentNumber != null and commentNumber!=''" >
+                commentnumber = #{commentNumber},
+            </if>
+        </set>
+        where id = #{resourceId}
+    </update>
+
+    <select id="selectLikeResource" resultMap="likeResourceMap">
+        select * from like_user_resource_table where rid = #{resourceId} and uid = #{userId}
+    </select>
+
+    <delete id="deleteLikeResource" >
+        delete from like_user_resource_table where rid = #{resourceId} and uid = #{userId}
+    </delete>
+
+    <insert id="insertLikeResource" parameterType="com.jxau.pojo.LikeResourceVO">
+        insert into form like_user_resource_table values (#{id},#{rId},#{uId})
+    </insert>
+
+    <select id="selectLookAllUser" resultMap="lookUserMap">
+        select * from video_user_table where vid = #{videoId}
+    </select>
+
+    <insert id="insertOneLook" parameterType="com.jxau.pojo.LookUserPo">
+        insert into video_user_table values (#{id},#{uid},#{vid})
+    </insert>
+</mapper>

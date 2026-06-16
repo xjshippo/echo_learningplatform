@@ -1,0 +1,39 @@
+# Maven build output
+target/
+*.jar
+*.war
+
+# IDE files
+.idea/
+*.iml
+.vscode/
+.project
+.classpath
+.settings/
+
+# OS files
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+
+# Logs
+*.log
+logs/
+
+# Temp files
+*.tmp
+*.temp
+
+# Claude local config
+.claude/
+
+# Docker env (credentials)
+**/docker/.env
+
+# Application config (contains credentials)
+application.yml
+
+# Binary archives
+*.tar.gz
+*.zip

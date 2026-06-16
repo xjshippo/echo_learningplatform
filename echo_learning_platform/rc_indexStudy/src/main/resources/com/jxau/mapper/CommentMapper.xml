@@ -1,0 +1,95 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Config 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.jxau.mapper.CommentMapper">
+    <resultMap id="commentMap" type="com.jxau.pojo.CommentPO">
+        <id column="id" property="id"/>
+        <result column="parentId" property="parentId"/>
+        <result column="invitationId" property="invitationId"/>
+        <result column="context" property="content"/>
+        <result column="likenumber" property="likeNumber"/>
+        <result column="commentnumber" property="commentNumber"/>
+        <result column="create_time" property="create_time"/>
+        <result column="state" property="state"/>
+        <result column="uid" property="uId"/>
+        <association property="userPO" column="uid" select="com.jxau.mapper.EssayMapper.getUserByUserId"/>
+    </resultMap>
+
+    <resultMap id="commentVoMap" type="com.jxau.pojo.CommentVO">
+        <id property="id" column="id"/>
+        <result column="iid" property="iId"/>
+        <result column="cid" property="cId"/>
+        <!--
+        <association property="commentPO" column="cid" select="com.jxau.mapper.CommentMapper.getOneCommentByCid"/>
+        -->
+    </resultMap>
+
+    <resultMap id="likeCommentVO" type="com.jxau.pojo.LikeCommentVO">
+        <id property="id" column="id"/>
+        <result column="cid" property="cId"/>
+        <result column="uid" property="uId"/>
+    </resultMap>
+
+    <insert id="insertOneComment" parameterType="com.jxau.pojo.CommentPO">
+        insert into comment_table (id, parentId, invitationId, context, likenumber, commentnumber, create_time, state, uid) values (#{id},#{parentId},#{invitationId},#{content},#{likeNumber},#{commentNumber},#{create_time},#{state},#{uId})
+    </insert>
+    <insert id="insertMidOneComment" parameterType="com.jxau.pojo.CommentVO">
+        insert into invitation_comment_table values (#{id},#{iId},#{cId})
+    </insert>
+    <select id="selectNoParentComment" resultMap="commentMap" >
+        select * from comment_table where invitationId = #{invitationId} and parentId = "" order by create_time desc
+    </select>
+    <select id="selectParentComment" resultMap="commentMap">
+        select * from comment_table where  parentId = #{parentId} order by create_time desc
+    </select>
+    <!--
+    <select id="getOneCommentByCid" resultMap="commentMap" parameterType="java.lang.String">
+        select * from comment_table where id = #{cid} and parentId = ""
+    </select>
+   -->
+    <update id="updateCommentNumber">
+        update comment_table
+        <set>
+            <if test="likeNumber != null and likeNumber!=''" >
+                likenumber = #{likeNumber},
+            </if>
+            <if test="commentNumber != null and commentNumber!=''" >
+                commentnumber = #{commentNumber},
+            </if>
+        </set>
+        <where>
+            <if test="parentId != null and parentId!=''" >
+               and id = #{parentId}
+            </if>
+            <if test="commentId != null and commentId!=''">
+                and id = #{commentId}
+            </if>
+            <if test="uId != null and uId!=''">
+                and uid = #{uId}
+            </if>
+        </where>
+    </update>
+
+    <select id="selectLikeComment" resultMap="likeCommentVO">
+        select * from like_user_comment_table
+        <where>
+            <if test="commentId != null and commentId != ''">
+                and cid = #{commentId}
+            </if>
+            <if test="userId != null and userId != ''">
+                and uid = #{userId}
+            </if>
+        </where>
+    </select>
+
+    <delete id="deleteLikeComment">
+        delete from like_user_comment_table where cid = #{commentId} and uid = #{userId}
+    </delete>
+
+    <insert id="insertLikeComment" parameterType="com.jxau.pojo.LikeCommentVO">
+        insert into like_user_comment_table values (#{id},#{cId},#{uId})
+    </insert>
+
+
+</mapper>

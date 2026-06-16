@@ -1,0 +1,296 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.jxau.mapper.UserMapper">
+
+    <!--映射结果集-->
+    <resultMap id="usermap" type="com.jxau.pojo.UserPO">
+        <id column="id" property="id" jdbcType="VARCHAR"></id>
+        <result column="login_act" property="loginAct" jdbcType="VARCHAR"></result>
+        <result column="pass_word" property="passWord" jdbcType="VARCHAR"></result>
+        <result column="nick_name" property="nickName" jdbcType="VARCHAR"></result>
+        <result column="nickName" property="nickName" jdbcType="VARCHAR"></result>
+        <result column="image_url" property="imageUrl" jdbcType="VARCHAR"></result>
+        <result column="phone" property="phone" jdbcType="VARCHAR"></result>
+        <result column="open_id" property="openId" jdbcType="VARCHAR"></result>
+        <result column="state" property="state" jdbcType="INTEGER"></result>
+        <result column="last_time" property="lastTime" jdbcType="DATE"></result>
+    </resultMap>
+
+    <resultMap id="comment" type="com.jxau.pojo.CommentPO">
+        <id column="id" property="id" jdbcType="VARCHAR"></id>
+        <result column="content" property="content" jdbcType="VARCHAR"></result>
+        <result column="userId" property="uId" jdbcType="VARCHAR"></result>
+        <result column="parentId" property="parentId" jdbcType="VARCHAR"></result>
+        <result column="likenumber" property="likeNumber" jdbcType="INTEGER"></result>
+        <result column="visitnumber" property="visitNumber" jdbcType="INTEGER"></result>
+        <result column="commentnumber" property="commentNumber" jdbcType="INTEGER"></result>
+        <result column="create_time" property="create_time" jdbcType="DATE"></result>
+        <result column="state" property="state" jdbcType="INTEGER"></result>
+    </resultMap>
+
+    <resultMap id="EssayMap" type="com.jxau.pojo.EssayUserVO">
+        <id property="id" column="id"/>
+        <result property="title" column="title"/>
+        <result property="content" column="context"/>
+        <result property="userId" column="userId"/>
+        <result property="tags" column="type"/>
+        <result property="state" column="state"/>
+        <result property="likeNumber" column="likenumber"/>
+        <result property="visitNumber" column="visitnumber"/>
+        <result property="commentNumber" column="commentnumber"/>
+        <result property="create_time" column="creat_time"/>
+        <result property="coverImgUrl" column="coverImgUrl"/>
+        <!-- 如果管理一个对象使用 association 调用com.jxau.mapper.EssayMapper.getUserByUserId 的查询方法，将 column的值传递给selById-->
+        <association property="user" column="userId" select="com.jxau.mapper.UserMapper.getUsersEssay"/>
+<!--        <association property="images" column="id" select="com.jxau.mapper.UserMapper.selectImages"/>-->
+    </resultMap>
+
+    <select id="getUserByOpenId" resultMap="usermap">
+        select * from user_table where open_id = #{openId};
+    </select>
+
+    <insert id="insertUser">
+        insert into user_table(
+        id,
+        login_act,
+        pass_word,
+        nick_name,
+        state,
+        image_url,
+        phone,
+        open_id,
+        last_time
+        )
+
+        value (
+        #{id},
+        #{loginAct},
+        #{passWord},
+        #{nickName},
+        #{state},
+        #{imageUrl},
+        #{phone},
+        #{openId},
+        #{lastTime}
+
+        )
+
+    </insert>
+
+    <update id="updateLastTimeSelective" parameterType="com.jxau.pojo.UserPO">
+
+        update user_table set last_time= #{lastTime} where id = #{id} and open_id = #{openId};
+
+    </update>
+
+    <select id="getUserByLoginAct" resultMap="usermap">
+       select * from user_table where login_act = #{loginAct};
+    </select>
+
+    <select id="getUserByUserId" resultMap="usermap">
+        select * from user_table where id = #{id};
+    </select>
+
+    <select id="getUsersEssay" resultType="com.jxau.pojo.UserEssayVO">
+        select nick_name as nickName, image_url as imageUrl from user_table where id = #{id};
+    </select>
+
+    <select id="selectPhone" resultType="int">
+        select count(*) from user_table where phone = #{userPhone};
+    </select>
+
+    <select id="getUserByPhone" resultMap="usermap">
+        select * from user_table where phone = #{userPhone};
+    </select>
+
+    <select id="getHistoryView" resultType ="com.jxau.pojo.HistoryViewVO">
+        SELECT
+        rc_personal.history_view_table.id,
+        rc_learn.invitation_table.type as label,
+        rc_personal.history_view_table.createTime,
+        rc_personal.user_table.nick_name as userName,
+        rc_personal.user_table.image_url as userImgUrl,
+        rc_learn.invitation_table.coverImgUrl as imgUrl,
+        rc_learn.invitation_table.title,
+        rc_learn.invitation_table.likenumber as likeNumber,
+        rc_learn.invitation_table.visitnumber as visitNumber,
+        rc_learn.invitation_table.commentnumber as commentNumber
+
+        FROM rc_personal.history_view_table
+        JOIN
+        rc_learn.invitation_table
+        ON
+        history_view_table.viewId = rc_learn.invitation_table.id
+        left JOIN
+        rc_personal.user_table
+        ON
+        rc_personal.user_table.id = rc_learn.invitation_table.userId
+        WHERE
+        history_view_table.userId = #{currentUserId}
+
+    </select>
+
+    <update id="updateUserInformation">
+
+        UPDATE basic_info_table
+        <set>
+            <if test="QQ != null" >
+                QQ = #{QQ,jdbcType=VARCHAR},
+            </if>
+            <if test="sex != null" >
+                sex = #{sex,jdbcType=VARCHAR},
+            </if>
+            <if test="address != null" >
+                address = #{address,jdbcType=VARCHAR},
+            </if>
+            <if test="phone != null" >
+                phone = #{phone,jdbcType=VARCHAR},
+            </if>
+            <if test="email != null" >
+                email = #{email,jdbcType=VARCHAR},
+            </if>
+            <if test="professional != null" >
+                professional = #{professional,jdbcType=VARCHAR},
+            </if>
+        </set>
+        WHERE
+        basic_info_table.userId=#{userId}
+    </update>
+
+    <select id="selectInvitationByUserId" resultType="com.jxau.pojo.HistoryViewVO">
+        SELECT
+
+        rc_learn.invitation_table.id,
+        rc_learn.invitation_table.creat_time as createTime,
+        rc_learn.invitation_table.coverImgUrl as imgUrl ,
+        rc_learn.invitation_table.title,
+        rc_learn.invitation_table.type as label ,
+        rc_personal.user_table.image_url as userImgUrl,
+        rc_personal.user_table.nick_name as userName
+
+        FROM rc_learn.invitation_table
+        JOIN
+        rc_personal.user_table
+        ON
+        rc_personal.user_table.id = rc_learn.invitation_table.userId
+        where
+        rc_learn.invitation_table.userId = #{currentUserId}
+    </select>
+
+    <select id="selectCommentsByUserId" resultMap="comment">
+        SELECT
+        id,
+        content,
+        userId,
+        parentId,
+        likenumber,
+        visitnumber,
+        commentnumber,
+        create_time,
+        state
+
+        FROM
+        rc_comment.discuss_comment_table
+
+        WHERE
+        userId = #{currentUserId}
+    </select>
+
+    <select id="selectUserInfo" resultType="com.jxau.pojo.UserInfoPO">
+        SELECT
+        rc_personal.basic_info_table.id,
+        rc_personal.basic_info_table.userId,
+        rc_personal.basic_info_table.sex,
+        rc_personal.basic_info_table.address,
+        rc_personal.basic_info_table.phone,
+        rc_personal.basic_info_table.QQ,
+        rc_personal.basic_info_table.email,
+        rc_personal.basic_info_table.skills_tree_id,
+        rc_personal.basic_info_table.medals,
+        rc_personal.basic_info_table.messageId,
+        rc_personal.basic_info_table.professional,
+        rc_personal.user_table.nick_name as userName
+
+        FROM
+        rc_personal.basic_info_table
+        JOIN
+        rc_personal.user_table
+        ON
+        rc_personal.basic_info_table.userId = rc_personal.user_table.id
+        WHERE
+        rc_personal.basic_info_table.userId = #{currentUserId}
+    </select>
+
+    <select id="selectAllProfessionals" resultType="String">
+        SELECT
+        rc_personal.professional_table.content
+        FROM
+        rc_personal.professional_table
+
+    </select>
+
+    <insert id="insertDefaultInfo" >
+        insert
+        into
+        rc_personal.basic_info_table(
+        id,
+        userId,
+        sex,
+        address,
+        phone,
+        QQ,
+        email,
+        skills_tree_id,
+        medals,
+        messageId,
+        professional
+        )
+        values(
+        #{id},
+        #{userId},
+        #{sex},
+        #{address},
+        #{phone},
+        #{QQ},
+        #{email},
+        #{skills_tree_id},
+        #{medals},
+        #{messageId},
+        #{professional}
+        )
+
+    </insert>
+
+    <select id="selectUserProfessional" resultType="com.jxau.pojo.UserProfessionalVO">
+        SELECT
+        rc_personal.basic_info_table.userId,
+        rc_personal.basic_info_table.professional
+        from
+        rc_personal.basic_info_table
+        JOIN
+        rc_personal.user_table
+        ON
+        rc_personal.user_table.id = rc_personal.basic_info_table.userId
+        WHERE
+        rc_personal.user_table.state != 0
+
+    </select>
+
+    <select id="selectLikeInvitationIds" resultType="String">
+        SELECT
+        rc_learn.like_user_invitation_table.iid
+        FROM
+        rc_learn.like_user_invitation_table
+        WHERE
+        rc_learn.like_user_invitation_table.uid = #{userId}
+
+    </select>
+
+    <select id="selectUserAllEssays" resultMap="EssayMap">
+        select * from rc_learn.invitation_table where userId = #{currentUserId} order by creat_time desc
+    </select>
+
+</mapper>

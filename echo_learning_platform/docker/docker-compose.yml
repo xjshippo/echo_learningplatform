@@ -1,0 +1,347 @@
+version: "3.8"
+
+networks:
+  rc-network:
+    driver: bridge
+
+volumes:
+  mysql-data:
+  nacos-data:
+  nacos-logs:
+
+services:
+
+  # ========================================
+  # MySQL 8.0 数据库
+  # ========================================
+  mysql:
+    image: mysql:8.0
+    container_name: rc-mysql
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+    volumes:
+      - mysql-data:/var/lib/mysql
+      - ./sql/init.sql:/docker-entrypoint-initdb.d/01-init.sql:ro
+    ports:
+      - "3306:3306"
+    networks:
+      - rc-network
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-p${MYSQL_ROOT_PASSWORD}"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 60s
+    command: >
+      --character-set-server=utf8mb4
+      --collation-server=utf8mb4_unicode_ci
+      --default-time-zone=+08:00
+    restart: always
+
+  # ========================================
+  # Redis 缓存
+  # ========================================
+  redis:
+    image: redis:7-alpine
+    container_name: rc-redis
+    ports:
+      - "6379:6379"
+    networks:
+      - rc-network
+    restart: always
+
+  # ========================================
+  # Nacos 服务注册中心
+  # ========================================
+  nacos:
+    image: nacos/nacos-server:1.4.4
+    container_name: rc-nacos
+    environment:
+      MODE: standalone
+      PREFER_HOST_MODE: hostname
+      NACOS_SERVER_PORT: 8848
+      JVM_XMS: 256m
+      JVM_XMX: 512m
+    ports:
+      - "8848:8848"
+    volumes:
+      - nacos-data:/home/nacos/data
+      - nacos-logs:/home/nacos/logs
+    networks:
+      - rc-network
+    healthcheck:
+      test: ["CMD", "wget", "-q", "http://localhost:8848/nacos/actuator/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 60s
+    restart: always
+
+  # ========================================
+  # 日志服务 rc_log (8086)
+  # ========================================
+  rc-log:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        MODULE: rc_log
+    container_name: rc-log
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/rc_manage?serverTimezone=Asia/Shanghai&characterEncoding=utf8&useUnicode=true&useSSL=false
+      SPRING_DATASOURCE_USERNAME: root
+      SPRING_DATASOURCE_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      SPRING_CLOUD_NACOS_DISCOVERY_SERVER_ADDR: ${NACOS_SERVER_ADDR}
+      SPRING_APPLICATION_NAME: rc-log-service
+    ports:
+      - "8086:8086"
+    networks:
+      - rc-network
+    depends_on:
+      mysql:
+        condition: service_healthy
+      nacos:
+        condition: service_started
+    restart: always
+
+  # ========================================
+  # 用户服务 rc_personal (8084)
+  # ========================================
+  rc-personal:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        MODULE: rc_personal
+    container_name: rc-personal
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/rc_personal?serverTimezone=Asia/Shanghai&characterEncoding=utf8&useUnicode=true&useSSL=false
+      SPRING_DATASOURCE_USERNAME: root
+      SPRING_DATASOURCE_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      SPRING_REDIS_HOST: redis
+      SPRING_REDIS_PORT: 6379
+      SPRING_CLOUD_NACOS_DISCOVERY_SERVER_ADDR: ${NACOS_SERVER_ADDR}
+      SPRING_APPLICATION_NAME: rc-personal-service
+      WX_APP_ID: ${WX_APP_ID}
+      WX_APP_SECRET: ${WX_APP_SECRET}
+      JWT_SECRET: ${JWT_SECRET}
+      JWT_EXPIRE: ${JWT_EXPIRE}
+      USER_IMG_URL: ${USER_IMG_URL}
+    ports:
+      - "8084:8084"
+    networks:
+      - rc-network
+    depends_on:
+      mysql:
+        condition: service_healthy
+      redis:
+        condition: service_started
+      nacos:
+        condition: service_started
+      rc-log:
+        condition: service_started
+    restart: always
+
+  # ========================================
+  # 学习中心 rc_indexStudy (8081)
+  # ========================================
+  rc-index:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        MODULE: rc_indexStudy
+    container_name: rc-index
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/rc_learn?serverTimezone=Asia/Shanghai&characterEncoding=utf8&useUnicode=true&useSSL=false
+      SPRING_DATASOURCE_USERNAME: root
+      SPRING_DATASOURCE_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      SPRING_CLOUD_NACOS_DISCOVERY_SERVER_ADDR: ${NACOS_SERVER_ADDR}
+      SPRING_APPLICATION_NAME: rc-index
+      ALIYUN_OSS_ACCESS_KEY_ID: ${ALIYUN_OSS_ACCESS_KEY_ID}
+      ALIYUN_OSS_ACCESS_KEY_SECRET: ${ALIYUN_OSS_ACCESS_KEY_SECRET}
+      ALIYUN_OSS_BUCKET_NAME: ${ALIYUN_OSS_BUCKET_NAME}
+      ALIYUN_OSS_BUCKET_DOMAIN: ${ALIYUN_OSS_BUCKET_DOMAIN}
+      ALIYUN_OSS_ENDPOINT: ${ALIYUN_OSS_ENDPOINT}
+      JWT_SECRET: ${JWT_SECRET}
+      JWT_EXPIRE: ${JWT_EXPIRE}
+    ports:
+      - "8081:8081"
+    networks:
+      - rc-network
+    depends_on:
+      mysql:
+        condition: service_healthy
+      nacos:
+        condition: service_started
+    restart: always
+
+  # ========================================
+  # 题库服务 rc_question (8085)
+  # ========================================
+  rc-question:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        MODULE: rc_question
+    container_name: rc-question
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/rc_question?serverTimezone=Asia/Shanghai&characterEncoding=utf8&useUnicode=true&useSSL=false
+      SPRING_DATASOURCE_USERNAME: root
+      SPRING_DATASOURCE_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      SPRING_CLOUD_NACOS_DISCOVERY_SERVER_ADDR: ${NACOS_SERVER_ADDR}
+      SPRING_APPLICATION_NAME: rc-question-service
+      WX_APP_ID: ${WX_APP_ID}
+      WX_APP_SECRET: ${WX_APP_SECRET}
+      JWT_SECRET: ${JWT_SECRET}
+      JWT_EXPIRE: ${JWT_EXPIRE}
+    ports:
+      - "8085:8085"
+    networks:
+      - rc-network
+    depends_on:
+      mysql:
+        condition: service_healthy
+      nacos:
+        condition: service_started
+    restart: always
+
+  # ========================================
+  # 讨论区服务 rc_comment (8082)
+  # ========================================
+  rc-comment:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        MODULE: rc_comment
+    container_name: rc-comment
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/rc_comment?serverTimezone=Asia/Shanghai&characterEncoding=utf8&useUnicode=true&useSSL=false
+      SPRING_DATASOURCE_USERNAME: root
+      SPRING_DATASOURCE_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      SPRING_CLOUD_NACOS_DISCOVERY_SERVER_ADDR: ${NACOS_SERVER_ADDR}
+      SPRING_APPLICATION_NAME: rc-comment
+      ALIYUN_OSS_ACCESS_KEY_ID: ${ALIYUN_OSS_ACCESS_KEY_ID}
+      ALIYUN_OSS_ACCESS_KEY_SECRET: ${ALIYUN_OSS_ACCESS_KEY_SECRET}
+      ALIYUN_OSS_BUCKET_NAME: ${ALIYUN_OSS_BUCKET_NAME}
+      ALIYUN_OSS_BUCKET_DOMAIN: ${ALIYUN_OSS_BUCKET_DOMAIN}
+      ALIYUN_OSS_ENDPOINT: ${ALIYUN_OSS_ENDPOINT}
+      JWT_SECRET: ${JWT_SECRET}
+      JWT_EXPIRE: ${JWT_EXPIRE}
+    ports:
+      - "8082:8082"
+    networks:
+      - rc-network
+    depends_on:
+      mysql:
+        condition: service_healthy
+      nacos:
+        condition: service_started
+    restart: always
+
+  # ========================================
+  # WebSocket 消息服务 rc_webMessage (8088)
+  # ========================================
+  rc-webmessage:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        MODULE: rc_webMessage
+    container_name: rc-webmessage
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/rc_message?serverTimezone=Asia/Shanghai&characterEncoding=utf8&useUnicode=true&useSSL=false
+      SPRING_DATASOURCE_USERNAME: root
+      SPRING_DATASOURCE_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      SPRING_CLOUD_NACOS_DISCOVERY_SERVER_ADDR: ${NACOS_SERVER_ADDR}
+      SPRING_APPLICATION_NAME: rc-webMessage
+      ALIYUN_OSS_ACCESS_KEY_ID: ${ALIYUN_OSS_ACCESS_KEY_ID}
+      ALIYUN_OSS_ACCESS_KEY_SECRET: ${ALIYUN_OSS_ACCESS_KEY_SECRET}
+      ALIYUN_OSS_BUCKET_NAME: ${ALIYUN_OSS_BUCKET_NAME}
+      ALIYUN_OSS_BUCKET_DOMAIN: ${ALIYUN_OSS_BUCKET_DOMAIN}
+      ALIYUN_OSS_ENDPOINT: ${ALIYUN_OSS_ENDPOINT}
+      JWT_SECRET: ${JWT_SECRET}
+      JWT_EXPIRE: ${JWT_EXPIRE}
+    ports:
+      - "8088:8088"
+    networks:
+      - rc-network
+    depends_on:
+      mysql:
+        condition: service_healthy
+      nacos:
+        condition: service_started
+    restart: always
+
+  # ========================================
+  # 管理服务 rc_manage (8091)
+  # ========================================
+  rc-manage:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        MODULE: rc_manage
+    container_name: rc-manage
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/rc_personal?serverTimezone=Asia/Shanghai&characterEncoding=utf8&useUnicode=true&useSSL=false
+      SPRING_DATASOURCE_USERNAME: root
+      SPRING_DATASOURCE_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      SPRING_CLOUD_NACOS_DISCOVERY_SERVER_ADDR: ${NACOS_SERVER_ADDR}
+      SPRING_APPLICATION_NAME: rc-manage-service
+      JWT_SECRET: ${JWT_SECRET}
+      JWT_EXPIRE: ${JWT_EXPIRE}
+      USER_IMG_URL: ${USER_IMG_URL}
+    ports:
+      - "8091:8091"
+    networks:
+      - rc-network
+    depends_on:
+      mysql:
+        condition: service_healthy
+      nacos:
+        condition: service_started
+    restart: always
+
+  # ========================================
+  # 网关服务 rc_order (8089) — 最后启动
+  # ========================================
+  rc-order:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        MODULE: rc_order
+    container_name: rc-order
+    environment:
+      SPRING_CLOUD_NACOS_DISCOVERY_SERVER_ADDR: ${NACOS_SERVER_ADDR}
+      SPRING_APPLICATION_NAME: rc-order
+      JWT_SECRET: ${JWT_SECRET}
+      JWT_EXPIRE: ${JWT_EXPIRE}
+      USER_IMG_URL: ${USER_IMG_URL}
+    ports:
+      - "8089:8089"
+    networks:
+      - rc-network
+    depends_on:
+      mysql:
+        condition: service_healthy
+      nacos:
+        condition: service_started
+      rc-log:
+        condition: service_started
+      rc-personal:
+        condition: service_started
+      rc-index:
+        condition: service_started
+      rc-question:
+        condition: service_started
+      rc-comment:
+        condition: service_started
+      rc-webmessage:
+        condition: service_started
+      rc-manage:
+        condition: service_started
+    restart: always

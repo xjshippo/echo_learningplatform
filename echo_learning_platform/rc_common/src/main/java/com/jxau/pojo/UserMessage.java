@@ -7,31 +7,16 @@ import lombok.NoArgsConstructor;
 
 import java.util.Date;
 
-/**
- * 信息实体类
- * @author cheng
- */
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
 public class UserMessage {
-    /**
-     * 消息发送者
-     */
-    private String userId;
-
-    /**
-     * 聊天文本
-     */
+    private String id;
+    private String fromUserId;
+    private String toUserId;
     private String content;
-
-    /**
-     * 消息接受者
-     */
-    private String getUserId;
-
-    /**
-     * 发送时间
-     */
+    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss", timezone = "GMT+8")
     private Date createTime;
+    private Integer read;
+    private String type;
 }

@@ -43,7 +43,7 @@ public interface QuestionService {
     @GetMapping("/question/get/set/information")
     public ResultEntity<PageInfo<ProblemSetsVO>> getQuestionSetsLevel(@RequestParam("currentPage") Integer currentPage,
                                                                       @RequestParam("pageSize") Integer pageSize,
-                                                                      @RequestParam(name = "level" ,defaultValue = "")String level);
+                                                                      @RequestParam(name = "key", defaultValue = "")String key);
 
     @GetMapping("/question/user/delete/notebook")
     public ResultEntity<String> userDeleteMistake(@RequestParam("questionId")String questionId);

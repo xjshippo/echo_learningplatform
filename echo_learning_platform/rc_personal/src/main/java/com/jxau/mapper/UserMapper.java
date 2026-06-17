@@ -5,6 +5,7 @@ import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
 
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
 
 @Mapper
@@ -44,4 +45,12 @@ public interface UserMapper {
     List<String> selectLikeInvitationIds(@Param("userId")String userId);
 
     List<EssayUserVO> selectUserAllEssays(@Param("currentUserId")String currentUserId);
+
+    void updateStudyTime(@Param("userId") String userId, @Param("minutes") int minutes);
+
+    HashMap<String, Object> selectStudyTime(@Param("userId") String userId);
+
+    List<FavoritesPO> selectUserFavorites(@Param("userId") String userId);
+
+    void updateUserVip(@Param("userId") String userId, @Param("months") int months);
 }

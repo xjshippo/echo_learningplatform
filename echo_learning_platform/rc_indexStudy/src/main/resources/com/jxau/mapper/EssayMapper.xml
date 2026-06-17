@@ -16,7 +16,7 @@
         <result property="commentNumber" column="commentnumber"/>
         <result property="create_time" column="creat_time"/>
         <result property="coverImgUrl" column="coverImgUrl"/>
-        <!-- 如果管理一个对象使用 association 调用com.jxau.mapper.EssayMapper.getUserByUserId 的查询方法，将 column的值传递给selById-->
+        <result property="isPaid" column="is_paid"/>
         <association property="user" column="userId" select="com.jxau.mapper.EssayMapper.getUserByUserId"/>
         <association property="images" column="id" select="com.jxau.mapper.EssayMapper.selectImages"/>
     </resultMap>

@@ -537,4 +537,59 @@ public class UserServiceImpl implements UserService {
         UserPO userByUserId = userMapper.getUserByUserId(userId);
         return this.token.getToken(userByUserId);
     }
+
+    @Override
+    public ResultEntity<String> updateStudyTime(String currentUserId, String addMinutes) {
+        try {
+            int minutes = addMinutes != null ? Integer.parseInt(addMinutes) : 0;
+            userMapper.updateStudyTime(currentUserId, minutes);
+            return ResultEntity.successWithoutData();
+        } catch (Exception e) {
+            return ResultEntity.falseWithoutData(e.getMessage());
+        }
+    }
+
+    @Override
+    public ResultEntity<HashMap<String, Object>> getStudyTime(String currentUserId) {
+        try {
+            HashMap<String, Object> result = userMapper.selectStudyTime(currentUserId);
+            return ResultEntity.successWithData(result);
+        } catch (Exception e) {
+            return ResultEntity.falseWithoutData(e.getMessage());
+        }
+    }
+
+    @Override
+    public ResultEntity<List<FavoritesPO>> getUserFavorites(String currentUserId) {
+        try {
+            List<FavoritesPO> list = userMapper.selectUserFavorites(currentUserId);
+            return ResultEntity.successWithData(list);
+        } catch (Exception e) {
+            return ResultEntity.falseWithoutData(e.getMessage());
+        }
+    }
+
+    @Override
+    public ResultEntity<String> purchaseVip(String currentUserId, String months) {
+        try {
+            int m = months != null ? Integer.parseInt(months) : 1;
+            userMapper.updateUserVip(currentUserId, m);
+            return ResultEntity.successWithoutData();
+        } catch (Exception e) {
+            return ResultEntity.falseWithoutData(e.getMessage());
+        }
+    }
+
+    @Override
+    public ResultEntity<String> payCallback(HashMap<String, String> map) {
+        try {
+            String userId = map.get("userId");
+            String months = map.getOrDefault("months", "1");
+            int m = Integer.parseInt(months);
+            userMapper.updateUserVip(userId, m);
+            return ResultEntity.successWithoutData();
+        } catch (Exception e) {
+            return ResultEntity.falseWithoutData(e.getMessage());
+        }
+    }
 }

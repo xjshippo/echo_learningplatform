@@ -62,6 +62,19 @@ public interface UserService {
     @GetMapping("/get/user/all/professional")
     public ResultEntity<List<UserProfessionalVO>> getUsersProfessional();
 
+    @PostMapping(value = "/user/studyTime/update", consumes = "application/json")
+    ResultEntity<String> updateStudyTime(@RequestBody HashMap<String, String> map);
 
+    @GetMapping("/user/studyTime/get")
+    ResultEntity<HashMap<String, Object>> getStudyTime();
+
+    @GetMapping("/user/favorites")
+    ResultEntity<List<FavoritesPO>> getUserFavorites();
+
+    @PostMapping(value = "/pay/vip/purchase", consumes = "application/json")
+    ResultEntity<String> purchaseVip(@RequestBody HashMap<String, String> map);
+
+    @PostMapping(value = "/pay/callback", consumes = "application/json")
+    ResultEntity<String> payCallback(@RequestBody HashMap<String, String> map);
 
 }

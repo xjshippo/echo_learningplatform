@@ -10,6 +10,7 @@ import com.jxau.mapper.EssayMapper;
 import com.jxau.mapper.UserMapper;
 import com.jxau.pojo.*;
 import com.jxau.service.EssayService;
+import com.jxau.util.AiReviewUtil;
 import com.jxau.util.JsonResult;
 import com.jxau.util.OssUtil;
 import com.jxau.util.ResultEntity;
@@ -46,6 +47,14 @@ public class EssayServiceImpl implements EssayService {
     @Override
     @Transactional(rollbackFor = Exception.class)
     public ResultEntity<String> addOneEssay(HashMap<String, Object> map) {
+        // AI 内容审核
+        String title = (String) map.get("title");
+        String content = (String) map.get("content");
+        AiReviewUtil.ReviewResult review = AiReviewUtil.reviewContent(title, content);
+        if (!review.passed) {
+            return ResultEntity.falseWithoutData("内容审核未通过：" + review.reason);
+        }
+
         String eid = UUID.randomUUID().toString().replace("-","");
 
         //ArrayList<String> tag = (ArrayList<String>)map.get("tags");
@@ -71,7 +80,8 @@ public class EssayServiceImpl implements EssayService {
                     0,
                     new Date(),
                     headUrl,
-                    null
+                    null,
+                    0
             );
             try {
                 int i = essayMapper.insertOneEssay(essay);

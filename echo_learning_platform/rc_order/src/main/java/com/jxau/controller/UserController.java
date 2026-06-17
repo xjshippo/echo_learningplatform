@@ -160,6 +160,53 @@ public class UserController {
         }
     }
 
+    @PostMapping("/user/studyTime/update")
+    @Authorize
+    public ResultEntity<String> updateStudyTime(@RequestBody HashMap<String, String> map) {
+        try {
+            return userService.updateStudyTime(map);
+        } catch (Exception e) {
+            return ResultEntity.falseWithoutData(e.getMessage());
+        }
+    }
 
+    @GetMapping("/user/studyTime/get")
+    @Authorize
+    public ResultEntity<HashMap<String, Object>> getStudyTime() {
+        try {
+            return userService.getStudyTime();
+        } catch (Exception e) {
+            return ResultEntity.falseWithoutData(e.getMessage());
+        }
+    }
+
+    @GetMapping("/user/favorites")
+    @Authorize
+    public ResultEntity<List<FavoritesPO>> getUserFavorites() {
+        try {
+            return userService.getUserFavorites();
+        } catch (Exception e) {
+            return ResultEntity.falseWithoutData(e.getMessage());
+        }
+    }
+
+    @PostMapping("/pay/vip/purchase")
+    @Authorize
+    public ResultEntity<String> purchaseVip(@RequestBody HashMap<String, String> map) {
+        try {
+            return userService.purchaseVip(map);
+        } catch (Exception e) {
+            return ResultEntity.falseWithoutData(e.getMessage());
+        }
+    }
+
+    @PostMapping("/pay/callback")
+    public ResultEntity<String> payCallback(@RequestBody HashMap<String, String> map) {
+        try {
+            return userService.payCallback(map);
+        } catch (Exception e) {
+            return ResultEntity.falseWithoutData(e.getMessage());
+        }
+    }
 
 }

@@ -31,6 +31,7 @@ public class Essay {
     private Date create_time;
     private String coverImgUrl;
     private ArrayList<ImagePo> images;
+    private Integer isPaid;
 
 
 }

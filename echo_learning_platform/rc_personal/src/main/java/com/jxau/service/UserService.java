@@ -39,4 +39,14 @@ public interface UserService {
     ResultEntity<List<EssayUserVO>> getUserInvitations(String currentUserId);
 
     String getTest(String userId);
+
+    ResultEntity<String> updateStudyTime(String currentUserId, String addMinutes);
+
+    ResultEntity<HashMap<String, Object>> getStudyTime(String currentUserId);
+
+    ResultEntity<List<FavoritesPO>> getUserFavorites(String currentUserId);
+
+    ResultEntity<String> purchaseVip(String currentUserId, String months);
+
+    ResultEntity<String> payCallback(HashMap<String, String> map);
 }

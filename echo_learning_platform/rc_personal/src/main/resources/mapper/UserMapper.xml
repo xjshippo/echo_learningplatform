@@ -17,6 +17,10 @@
         <result column="open_id" property="openId" jdbcType="VARCHAR"></result>
         <result column="state" property="state" jdbcType="INTEGER"></result>
         <result column="last_time" property="lastTime" jdbcType="DATE"></result>
+        <result column="is_vip" property="isVip" jdbcType="INTEGER"></result>
+        <result column="vip_expire_time" property="vipExpireTime" jdbcType="DATE"></result>
+        <result column="study_time_today" property="studyTimeToday" jdbcType="INTEGER"></result>
+        <result column="study_time_week" property="studyTimeWeek" jdbcType="INTEGER"></result>
     </resultMap>
 
     <resultMap id="comment" type="com.jxau.pojo.CommentPO">
@@ -292,5 +296,36 @@
     <select id="selectUserAllEssays" resultMap="EssayMap">
         select * from rc_learn.invitation_table where userId = #{currentUserId} order by creat_time desc
     </select>
+
+    <update id="updateStudyTime">
+        UPDATE rc_personal.user_table
+        SET study_time_today = IF(study_time_date = CURDATE(), study_time_today + #{minutes}, #{minutes}),
+            study_time_week = IF(YEARWEEK(study_time_date, 1) = YEARWEEK(CURDATE(), 1),
+                IF(study_time_date = CURDATE(), study_time_week + #{minutes}, study_time_week + #{minutes} - study_time_today),
+                #{minutes}),
+            study_time_date = CURDATE()
+        WHERE id = #{userId}
+    </update>
+
+    <select id="selectStudyTime" resultType="java.util.HashMap">
+        SELECT
+            COALESCE(IF(study_time_date = CURDATE(), study_time_today, 0), 0) AS todayMinutes,
+            COALESCE(IF(YEARWEEK(study_time_date, 1) = YEARWEEK(CURDATE(), 1), study_time_week, 0), 0) AS weekMinutes
+        FROM rc_personal.user_table
+        WHERE id = #{userId}
+    </select>
+
+    <select id="selectUserFavorites" resultType="com.jxau.pojo.FavoritesPO">
+        SELECT * FROM rc_personal.favorites_table WHERE userId = #{userId}
+    </select>
+
+    <update id="updateUserVip">
+        UPDATE rc_personal.user_table
+        SET is_vip = 1,
+            vip_expire_time = IF(vip_expire_time IS NULL OR vip_expire_time < NOW(),
+                DATE_ADD(NOW(), INTERVAL #{months} MONTH),
+                DATE_ADD(vip_expire_time, INTERVAL #{months} MONTH))
+        WHERE id = #{userId}
+    </update>
 
 </mapper>

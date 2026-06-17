@@ -129,6 +129,43 @@ public class QuestionServiceImpl implements QuestionService {
 
             ExaminationVO examinationVO = new ExaminationVO(passRate,faultQuestions,answerList,rightNumber,wrongNumber,total,problemSet);
 
+            // 自动将错题录入错题本
+            for (String faultId : faultQuestions) {
+                // 查找错题的完整信息
+                for (MultipleChoicePO item : list) {
+                    if (item.getUuid().equals(faultId)) {
+                        // 获取用户填写的错误答案
+                        Object userAns = map1.get(item.getUuid());
+                        if (userAns == null) {
+                            for (int j = 1; j <= list.size(); j++) {
+                                if (list.get(j - 1).getUuid().equals(faultId)) {
+                                    userAns = map1.get(String.valueOf(j));
+                                    break;
+                                }
+                            }
+                        }
+                        String userChoice = "";
+                        if (userAns instanceof List) {
+                            userChoice = userAns.toString();
+                        } else if (userAns instanceof String) {
+                            userChoice = (String) userAns;
+                        }
+                        // 检查是否已在错题本中
+                        int exists = questionMapper.selectWrongQuestionByQuestionId(item.getUuid(), currentUserId);
+                        if (exists == 0) {
+                            String mistakeId = UUID.randomUUID().toString().replace("-", "");
+                            MistakePO mistakePO = new MistakePO(mistakeId, item.getUuid(), new Date(),
+                                    userChoice, item.getQuestion_type(), item.getAnalysis(), item.getOp_answer());
+                            questionMapper.insertUserNoteBook(mistakePO);
+                            String s1 = UUID.randomUUID().toString().replace("-", "");
+                            MistakesUserPO mistakesUserPO = new MistakesUserPO(s1, currentUserId, mistakeId);
+                            questionMapper.insertUserMistake(mistakesUserPO);
+                        }
+                        break;
+                    }
+                }
+            }
+
             // 把用户和题组挂钩
             String uuid = UUID.randomUUID().toString().replace("-", "");
             ProblemsetsUserPO problemsetsUserPO = new ProblemsetsUserPO(questionSetId, uuid, currentUserId, new Date(), passRate);
@@ -240,15 +277,18 @@ public class QuestionServiceImpl implements QuestionService {
     @Transactional(rollbackFor = Exception.class)
     public ResultEntity<String> addOneProblemSets(HashMap<String, String> map) {
         String pid = UUID.randomUUID().toString().replace("_", "");
+        int number = Integer.parseInt(map.get("number"));
         ProblemSetsVO problemSetsVO = new ProblemSetsVO(
                 pid,
                 null,
                 map.get("title"),
                 Double.valueOf(map.get("passRate")),
-                Integer.parseInt(map.get("number")),
+                number,
+                number,
                 Integer.parseInt(map.get("passNumbers")),
                 new Date(),
-                map.get("level")
+                map.get("level"),
+                0
         );
         try {
             int i = questionMapper.insertProblemSets(problemSetsVO,map.get("skillid"));

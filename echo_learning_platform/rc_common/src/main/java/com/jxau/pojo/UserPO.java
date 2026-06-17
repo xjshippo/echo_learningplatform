@@ -20,4 +20,8 @@ public class UserPO {
     private String phone;
     private String openId;
     private Date lastTime;
+    private Integer isVip;
+    private Date vipExpireTime;
+    private Integer studyTimeToday;
+    private Integer studyTimeWeek;
 }

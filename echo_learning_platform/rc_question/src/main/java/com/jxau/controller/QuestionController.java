@@ -117,8 +117,15 @@ public class QuestionController {
     @GetMapping("/question/get/set/information")
     public ResultEntity<PageInfo<ProblemSetsVO>> getQuestionSetsLevel(@RequestParam("currentPage") Integer currentPage,
                                                                       @RequestParam("pageSize") Integer pageSize,
-                                                                      @RequestParam(name = "level" ,defaultValue = "")String level){
+                                                                      @RequestParam(name = "key", defaultValue = "")String key){
 
+        // 前端传 key=advance(进阶) / key=race(困难)，映射为中文 level
+        String level = "";
+        if ("advance".equals(key)) {
+            level = "进阶";
+        } else if ("race".equals(key)) {
+            level = "困难";
+        }
         return questionService.getQuestionSetBylevel(currentPage,pageSize,level);
     }
 

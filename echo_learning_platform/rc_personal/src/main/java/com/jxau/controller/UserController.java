@@ -208,6 +208,56 @@ public class UserController {
         return userService.getUserProfessional();
     }
 
+    /**
+     * 上报学习时长
+     */
+    @PostMapping("/user/studyTime/update")
+    public ResultEntity<String> updateStudyTime(@RequestBody HashMap<String, String> map) {
+        HttpServletRequest request = ((ServletRequestAttributes) RequestContextHolder.getRequestAttributes()).getRequest();
+        String currentUserId = (String) request.getHeader("currentUser");
+        String addMinutes = map.get("addMinutes");
+        return userService.updateStudyTime(currentUserId, addMinutes);
+    }
+
+    /**
+     * 获取学习时长
+     */
+    @GetMapping("/user/studyTime/get")
+    public ResultEntity<HashMap<String, Object>> getStudyTime() {
+        HttpServletRequest request = ((ServletRequestAttributes) RequestContextHolder.getRequestAttributes()).getRequest();
+        String currentUserId = (String) request.getHeader("currentUser");
+        return userService.getStudyTime(currentUserId);
+    }
+
+    /**
+     * 获取我的收藏
+     */
+    @GetMapping("/user/favorites")
+    public ResultEntity<List<FavoritesPO>> getUserFavorites() {
+        HttpServletRequest request = ((ServletRequestAttributes) RequestContextHolder.getRequestAttributes()).getRequest();
+        String currentUserId = (String) request.getHeader("currentUser");
+        return userService.getUserFavorites(currentUserId);
+    }
+
+    /**
+     * 购买VIP（模拟支付）
+     */
+    @PostMapping("/pay/vip/purchase")
+    public ResultEntity<String> purchaseVip(@RequestBody HashMap<String, String> map) {
+        HttpServletRequest request = ((ServletRequestAttributes) RequestContextHolder.getRequestAttributes()).getRequest();
+        String currentUserId = (String) request.getHeader("currentUser");
+        String months = map.getOrDefault("months", "1");
+        return userService.purchaseVip(currentUserId, months);
+    }
+
+    /**
+     * 微信支付回调（模拟）
+     */
+    @PostMapping("/pay/callback")
+    public ResultEntity<String> payCallback(@RequestBody HashMap<String, String> map) {
+        return userService.payCallback(map);
+    }
+
 
 
 }

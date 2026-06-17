@@ -17,12 +17,14 @@ public class ProblemSetsVO {
 
     private String id;
     private List<TagVO> tagList;
-    private String title;// 题组的名字
+    private String title;
     private Double passRate;
     private Integer number;
+    private Integer questionCount;
     private Integer passNumbers;
     private Date create_time;
     private String level;
+    private Integer isPaid;
 
 
 }

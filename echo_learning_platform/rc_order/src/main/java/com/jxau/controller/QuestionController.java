@@ -97,9 +97,9 @@ public class QuestionController {
     @GetMapping("/question/get/set/information")
     public ResultEntity<PageInfo<ProblemSetsVO>> getQuestionSetsLevel(@RequestParam("currentPage") Integer currentPage,
                                                                       @RequestParam("pageSize") Integer pageSize,
-                                                                      @RequestParam(name = "level" ,defaultValue = "")String level) {
+                                                                      @RequestParam(name = "key", defaultValue = "")String key) {
         try{
-            return questionService.getQuestionSetsLevel(currentPage,pageSize,level);
+            return questionService.getQuestionSetsLevel(currentPage,pageSize,key);
         }catch (Exception e){
             return ResultEntity.falseWithoutData(e.getMessage());
         }

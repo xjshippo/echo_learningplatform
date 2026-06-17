@@ -11,6 +11,7 @@
         skillid as skillId,
         passrate as passRate,
         number,
+        number as questionCount,
         passnumbers as passNumbers,
         createtime as create_time,
         `level`,
@@ -277,16 +278,18 @@
         skillid as skillId,
         passrate as passRate,
         number,
+        number as questionCount,
         passnumbers as passNumbers,
         createtime as create_time,
         `level`,
         `name` as title
         from
         rc_question.problemsets_table
-        <if test="level != null and level != ''">
-            WHERE
-            rc_question.problemsets_table.`level` = #{level}
-        </if>
+        <where>
+            <if test="level != null and level != ''">
+                `level` = #{level}
+            </if>
+        </where>
 
 
     </select>
